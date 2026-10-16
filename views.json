@@ -1,14 +1,40 @@
 [
   {
     "name": "week",
-    "title": "This week",
-    "subtitle": "Forest Harvest for Claude Code: what needs attention, rendered by npm run view",
+    "title": "The harvest this week",
+    "subtitle": "Read-only snapshot from the database. Demo records are fictional.",
     "sections": [
-      {
-        "title": "Needs attention",
-        "note": "TODO(author): point this at the industry's attention view (overdue, stuck, quiet).",
-        "sql": "select 'replace me' as item, 'TODO(author)' as why"
-      }
+      { "title": "Needs someone", "note": "Council notices first, then the trucks, the mill, money, owners and contractors.", "sql": "select item,harvest,record,owner,due_date,detail from v_attention order by case when item like 'NOTICE%' or item like 'PLAN%' then 1 when item='OVERWEIGHT' then 2 when item like 'MILL%' then 3 when item='INVOICE OVERDUE' then 4 else 5 end,due_date" },
+      { "title": "Loads in the last 7 days", "sql": "select loaded_on,harvest,count(*)::int as loads,round(sum(tonnes),1) as tonnes,round(sum(sale_cents)/100.0) as value from v_loads where loaded_on>=current_date-7 group by loaded_on,harvest order by loaded_on desc,harvest" },
+      { "title": "Harvests", "sql": "select harvest,forest,owner,crew,status,est_tonnes,tonnes,tonnes_left,tonnes_per_day,owner_net_per_tonne from v_harvests where status in ('active','planned') order by harvest" }
+    ]
+  },
+  {
+    "name": "money",
+    "title": "Log sales money",
+    "subtitle": "Owed by buyers, owed to owners, owed to contractors.",
+    "sections": [
+      { "title": "Owed by buyers", "sql": "select state,customer,count(*)::int as items,round(sum(amount_cents)/100.0) as amount from v_receivables group by state,customer order by state,customer" },
+      { "title": "Owed to owners (received loads not on a return)", "sql": "select owner,to_char(date_trunc('month',loaded_on),'YYYY-MM') as month,count(*)::int as loads,round(sum(tonnes),1) as tonnes,round(sum(sale_cents)/100.0) as sales,round(sum(owner_net_cents)/100.0) as owner_net from v_owner_lines where state='received' and owner_return_id is null group by owner,2 order by owner,2" },
+      { "title": "Price sheet in force", "sql": "select c.name as customer,p.code as product,x.from_on,round(x.price_cents/100.0,2) as per_tonne from customers c cross join products p join lateral (select from_on,price_cents from sale_prices sp where sp.customer_id=c.id and sp.product_id=p.id and sp.from_on<=current_date order by from_on desc limit 1) x on true order by p.code,per_tonne desc" }
+    ]
+  },
+  {
+    "name": "mill",
+    "title": "Mill statements against dockets",
+    "subtitle": "Dockets the mill has not reported, lines with no docket, and tonnes or values that differ.",
+    "sections": [
+      { "title": "Differences", "sql": "select issue,customer,docket,on_date,docket_tonnes,mill_tonnes,detail from v_reconcile order by issue,on_date" },
+      { "title": "Tonnes by buyer", "sql": "select customer,count(*)::int as loads,round(sum(docket_tonnes),1) as docket_tonnes,round(sum(mill_tonnes),1) as mill_tonnes,round(sum(mill_tonnes)-sum(docket_tonnes),1) as difference from v_loads where mill_tonnes is not null group by customer order by customer" }
+    ]
+  },
+  {
+    "name": "compliance",
+    "title": "Record checks",
+    "subtitle": "What the checks found against the rules in docs/compliance.md. Not legal or tax advice.",
+    "sections": [
+      { "title": "Findings", "sql": "select rule,harvest,record,finding,due_date,source from v_compliance order by rule,record" },
+      { "title": "Council notices", "sql": "select harvest,forest,kind,starts_on,window_opens,give_by,given_on,plan_by,plan_in_place_on from v_notices order by starts_on" }
     ]
   }
 ]

@@ -1,24 +1,25 @@
 # Why there is no front end
 
-PSLog is a database with a subscription. The tables underneath it are ordinary: a few entities, a few relationships, a handful of workflows you repeat every week. What you pay for is the layer on top that lets people who do not write SQL get at those tables. Screens, filters, dashboards, forms.
+Under a harvest and log sales system sits an ordinary set of records: forests and their owners, harvests with a crew and a rate, one docket per load, a price sheet per buyer, what each mill says it received, and the money owed in three directions. What you pay a vendor for is the layer on top that lets the office get at those records without writing queries.
 
-That layer used to be the whole product, because talking to a database was hard. It is not hard any more. Open this folder in Claude Code, describe what you want, and it writes the query, runs it, and explains the answer. Ask a question the dashboard never had a chart for and you still get an answer.
+That layer used to be the whole product, because talking to a database was hard. It is not hard any more. Open this folder in Claude Code, ask "which dockets has the mill not reported?" or "what did Te Awa net per tonne last month?", and it runs the query and explains the answer. Ask a question the report menu never had and you still get an answer.
 
 ## What you gain
 
-- **Better answers.** A dashboard shows what the vendor decided to chart. Here you ask your own question, in your own words, and get it answered against your own data.
-- **No seats.** Everyone who needs to look can look. The bill does not grow with headcount.
-- **Your data in your Postgres.** Plain tables. Back them up, query them from anything, leave any time. There is no export step because there is nothing to leave.
-- **A process that matches you.** When your way of working changes, you add a command. You do not wait for a feature request to clear.
+- **Better answers.** Which buyer pays best for each grade, which crew moves the most tonnes a day, what cartage costs against what the load earns. Your own question, against your own records.
+- **No seats.** Harvest managers, accounts and owners' advisers can all look. The bill does not grow with headcount.
+- **Your records in your Postgres.** Plain tables. Back them up, query them from anything, leave any time.
+- **Your rates and rules, not the vendor's.** Your grade codes, your management fee, your tolerance on mill tonnes. Change a setting or ask `/customise`.
 
 ## What you give up
 
-- **A visual board.** Stages are a table you ask about, not cards you drag.
-- **A phone app.** It runs where Claude Code runs.
+- **Electronic dockets in the cab.** Drivers do not tap a screen here. Dockets come in from the weighbridge, a docket book or a CSV, or Enterprise DNA connects your docket app.
+- **A screen to key dockets into all day.** Loads go in by command, by import, or from a connected feed.
+- **Maps.** Stands and settings are records, not polygons. Your GIS stays where it is.
 - **A vendor help desk.** This is open source. Enterprise DNA supports the installed version for businesses that want someone to call.
 
 ## Who this fits
 
-Small teams who already use Claude Code, or who would rather learn to ask than learn another interface. If your team needs a screen to look at all day, keep PSLog. If you need the answers more than the screens, this is cheaper, faster and yours.
+Forest managers, harvest contractors and woodlot owners' agents who already pull dockets and mill statements together at month end and want that work done by a query. If your crews depend on in-cab docketing every day, keep that tool and move the money, reconciliation and owner returns here.
 
 Installed and run for you: https://enterprisedna.co/omni/instead-of/pslog

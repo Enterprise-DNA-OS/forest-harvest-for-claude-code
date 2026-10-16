@@ -1,11 +1,52 @@
 [
   {
-    "name": "example",
-    "title": "TODO(author): the first document this industry must produce",
-    "for_each": "select gen_random_uuid() as id, 'Example' as name",
+    "name": "owner-return",
+    "title": "Harvest return to owner",
+    "for_each": "select r.id,r.number from owner_returns r",
+    "file": "number",
+    "sections": [
+      { "title": "Return", "sql": "select r.number,ow.name as owner,ow.gst_number,r.period_start,r.period_end,r.issued_on,r.tonnes,round(r.sales_cents/100.0,2) as sales,round(r.costs_cents/100.0,2) as costs,round(r.net_cents/100.0,2) as net_to_owner from owner_returns r join owners ow on ow.id=r.owner_id where r.id=$1" },
+      { "title": "By grade and buyer", "note": "Tonnes are the buyer's received tonnes where reported, otherwise the weighbridge.", "sql": "select product,customer,count(*)::int as loads,round(sum(tonnes),3) as tonnes,round(sum(sale_cents)/100.0,2) as sales,round(sum(sale_cents)/sum(tonnes)/100.0,2) as per_tonne from v_owner_lines where owner_return_id=$1 group by product,customer order by sales desc" },
+      { "title": "Costs", "sql": "select round(sum(logging_cents)/100.0,2) as logging,round(sum(cartage_cents)/100.0,2) as cartage,round(sum(levy_cents)/100.0,2) as growers_levy,round(sum(mgmt_cents)/100.0,2) as management_fee,round(sum(owner_net_cents)/100.0,2) as net_to_owner,round(sum(owner_net_cents)/sum(tonnes)/100.0,2) as net_per_tonne from v_owner_lines where owner_return_id=$1" },
+      { "title": "Every load", "sql": "select docket,loaded_on,harvest,product,customer,tonnes,round(sale_cents/100.0,2) as sale,round(owner_net_cents/100.0,2) as net from v_owner_lines where owner_return_id=$1 order by loaded_on,docket" }
+    ]
+  },
+  {
+    "name": "invoice",
+    "title": "Tax invoice",
+    "for_each": "select i.id,i.number from invoices i where not i.buyer_created",
+    "file": "number",
+    "sections": [
+      { "title": "Invoice", "sql": "select s.business_name as from_business,s.gst_number as our_gst_number,i.number,c.name as bill_to,c.gst_number as their_gst_number,i.issued_on,i.due_on,round(i.amount_cents/100.0,2) as excl_gst,round(i.gst_cents/100.0,2) as gst,round((i.amount_cents+i.gst_cents)/100.0,2) as total from invoices i join customers c on c.id=i.customer_id cross join settings s where i.id=$1" },
+      { "title": "Loads", "sql": "select docket,loaded_on,product,tonnes,round(price_cents/100.0,2) as per_tonne,round(sale_cents/100.0,2) as amount from v_loads where invoice_id=$1 order by loaded_on,docket" }
+    ]
+  },
+  {
+    "name": "contractor-invoice",
+    "title": "Buyer-created tax invoice",
+    "for_each": "select p.id,p.number from contractor_payments p where p.buyer_created",
+    "file": "number",
+    "sections": [
+      { "title": "Taxable supply information", "note": "Created by the buyer under an agreement with the supplier. Both GST numbers must show.", "sql": "select p.number,k.name as supplier,k.gst_number as supplier_gst_number,s.business_name as buyer,s.gst_number as buyer_gst_number,k.bcti_agreement_on as agreement_on,p.kind,p.period_end,p.issued_on,p.tonnes,round(p.amount_cents/100.0,2) as excl_gst,round(p.gst_cents/100.0,2) as gst,round((p.amount_cents+p.gst_cents)/100.0,2) as total from contractor_payments p join contractors k on k.id=p.contractor_id cross join settings s where p.id=$1" },
+      { "title": "Loads", "sql": "select docket,loaded_on,harvest,customer,tonnes,round(case when logging_pay_id=$1 then logging_cents else cartage_cents end/100.0,2) as amount from v_loads where logging_pay_id=$1 or cartage_pay_id=$1 order by loaded_on,docket" }
+    ]
+  },
+  {
+    "name": "harvest-notice",
+    "title": "Notice of harvesting (draft)",
+    "for_each": "select o.id,o.code from operations o where o.status in ('planned','active') and o.planned_start is not null",
+    "file": "code",
+    "sections": [
+      { "title": "Notice", "note": "NES-CF regulation 64: the place, and the dates harvesting is planned to begin and end. Use your council's own form if it has one.", "sql": "select n.harvest,n.forest,f.region,n.regional_council,n.territorial_authority,o.area_ha,n.starts_on as planned_start,o.planned_end,n.window_opens,n.give_by,n.given_on,o.plan_in_place_on from v_notices n join operations o on o.id=n.operation_id join forests f on f.id=o.forest_id where n.operation_id=$1 and n.kind='harvest'" }
+    ]
+  },
+  {
+    "name": "levy-summary",
+    "title": "Growers' levy summary",
+    "for_each": "select id,name from owners",
     "file": "name",
     "sections": [
-      { "title": "Details", "sql": "select 'replace me' as item, $1::text as record_id" }
+      { "title": "By month", "note": "Levy rate from settings. Deducted means the buyer took it from the payment; the rest is the owner's to pay.", "sql": "select to_char(month,'YYYY-MM') as month,tonnes,round(levy_due_cents/100.0,2) as levy_due,round(deducted_by_buyers_cents/100.0,2) as deducted_by_buyers,round(owner_to_pay_cents/100.0,2) as owner_to_pay,owner_paid_on from v_levy where owner_id=$1 order by month" }
     ]
   }
 ]
